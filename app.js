@@ -55,18 +55,58 @@ var firebaseConfig = {
   firebase.initializeApp(firebaseConfig);
   let database = firebase.database();
 
-  app.get('/', async (req, res) => {
-      res.send("Index");
+  app.get('/:showData', async (req, res) => {
+      let showData = req.params.showData;
+      let ref = database.ref('/'+showData);
+      ref.on("value", function(snapshot) {
+          console.log("Value:: ", snapshot.val());
+          res.send(snapshot.val());
+      }, function(error) {
+          console.log("Error::", error);
+          res.send(error);
+      });
   });
 
   app.post('/', async (req, res) => {
       let user_name = req.body.user_name;
-      database.ref('user/'+req.body.user_name).set({
+      let user = await database.ref('user/').set({
           name: req.body.name,
           user_name: user_name,
           age: req.body.age
       });
-      res.send(req.body);
+
+      let resData = {
+          code: 200,
+          data: user
+      }
+      res.send(resData);
+  });
+
+  app.post('/push', async (req, res) => {
+    let user_name = req.body.user_name;
+    let user = await database.ref('players/').push({
+        name: req.body.name,
+        user_name: user_name,
+        age: req.body.age
+    });
+
+    let resData = {
+        code: 200,
+        data: user
+    }
+    res.send(resData);
+});
+
+  app.post('/update', async (req, res) => {
+    let user_name = req.body.user_name;
+    let userUpdate = await database.ref("user/"+user_name).update({
+        age: req.body.age,
+    });
+    let resData = {
+        code: 200,
+        data: userUpdate,
+    }
+    res.send(resData);
   });
 
 require('expressjs-api-explorer')(app, express);
